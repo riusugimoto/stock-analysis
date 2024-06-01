@@ -1,0 +1,42 @@
+Loop Explanation
+range(start, data.shape[0], step):
+start: The index at which to start the loop. This defaults to 2500, meaning the backtesting will start with the 2500th data point.
+data.shape[0]: The total number of rows in the dataset. This is the endpoint for the loop.
+step: The size of each step in the loop. This defaults to 250, meaning the loop will increment by 250 rows at a time.\
+
+
+Data Slicing
+data.iloc[0:i].copy():
+
+data.iloc[0:i]: Selects all rows from the beginning up to the ith row. This subset is used as the training data for the model.
+.copy(): Creates a copy of the selected data to avoid altering the original dataset.
+data.iloc[i:(i+step)].copy():
+
+data.iloc[i:(i+step)]: Selects the rows from the ith index up to the (i+step)th index. This subset is used as the test data for the model.
+.copy(): Creates a copy of the selected data to avoid altering the original dataset.
+
+Here’s an illustration:
+First iteration (i = 2500):
+train: Rows 0 to 2499
+test: Rows 2500 to 2749
+
+Second iteration (i = 2750):
+train: Rows 0 to 2749
+test: Rows 2750 to 2999
+
+
+
+pd.concat(all_predictions)
+Purpose of Concatenation
+
+Iteration 4:
+all_predictions = [predictions_1, predictions_2, predictions_3, predictions_4]
+
+Collect All Predictions: During each iteration of the loop, the model makes predictions for a specific test set.
+ These predictions are stored in the all_predictions list. Each element in this list corresponds to the predictions made for one specific chunk of the data.
+
+Combine Predictions: After the loop completes, the all_predictions list contains multiple DataFrames, each holding predictions for different segments of the data.
+ Concatenating these DataFrames combines them into a single DataFrame, which represents the model's predictions for the entire dataset.
+
+Evaluation and Analysis: Having all predictions in a single DataFrame allows for a more straightforward evaluation of the model's performance. 
+You can easily compare the predicted values to the actual values, calculate metrics such as accuracy, precision, recall, or any other performance measure, and visualize the results.
