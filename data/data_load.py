@@ -10,18 +10,17 @@ from copy import deepcopy as dc
 def getdata(lookback):
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
-    data = pd.read_csv('AMZN.csv')
+    data = pd.read_csv('C:\\Users\\agoo1\\OneDrive\\Documents\\2024_summer\\Data\\stock\\LSTM\\data\\TSLA.csv')
     data = data[['Date', 'Close']]
     # converts the 'Date' column of the DataFrame to datetime objects.
     data['Date'] = pd.to_datetime(data['Date'])  # data.index = pd.to_datetime(data.index)
 
     plt.plot(data['Date'], data['Close'])
+    plt.show()
 
     transformed_data = transformed_data_for_lstm(data, lookback)
     return transformed_data
 
-
-  
 
 def transformed_data_for_lstm(data, n_steps):
     data = dc(data)

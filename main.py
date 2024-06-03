@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 import torch
 import torch.nn as nn
@@ -10,10 +11,9 @@ from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 
-from data_load import getdata
-from classes import TimeSeriesDataset
-from classes import LSTM
-
+from data.data_load import getdata
+from models.classes import TimeSeriesDataset, LSTM
+from utils.data_process import scale_data, inverse_transform
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
 def main():
@@ -21,10 +21,9 @@ def main():
     data= getdata(lookback)
     data_as_np = data.to_numpy()
 
-
     # normalized data can speed up the convergence of the learning algorithm and lead to better performance.
-    scaler = MinMaxScaler(feature_range=(-1, 1))
-    normalided_data_as_np = scaler.fit_transform(data_as_np)
+    normalided_data_as_np, scaler = scale_data(data_as_np)
+    
 
     X = normalided_data_as_np[:, 1:] # all rows and all cols except first one(starting from 2nd col)  col-1, col-2....col-7
     y = normalided_data_as_np[:, 0]  # all rows and first col   predicting col
@@ -87,27 +86,81 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
     for epoch in range(num_epochs):
-        train_one_epoch()
-        validate_one_epoch()
-    
+        train_one_epoch(epoch, model, train_loader, loss_function, optimizer)
+        validate_one_epoch(model, test_loader, loss_function)
 
-    
     with torch.no_grad():
-        predicted = model(X_train.to(device)).to('cpu').numpy()
+        train_predicted = model(X_train.to(device)).to('cpu').numpy()
 
-    plt.plot(y_train, label='Actual Close')
-    plt.plot(predicted, label='Predicted Close')
+    # plt.plot(y_train, label='Actual Close')
+    # plt.plot(predicted, label='Predicted Close')
+    # plt.xlabel('Day')
+    # plt.ylabel('Close')
+    # plt.legend()
+    # plt.show()
+
+
+
+
+
+
+#Convert the LSTM model's predictions and the actual training labels (y_train) from their normalized scale back to their original scale.
+    '''
+    ARRAY SIZE (X_train.shape[0], lookback+1)  
+    The MinMaxScaler is fitted to the entire dataset that includes multiple features (columns).
+    When you perform an inverse transformation, the scaler expects the same number of features (columns) as it was originally fitted with. 
+    This ensures that the transformation is consistent with the original scaling parameters.
+     '''
+  
+    train_predictions = inverse_transform(scaler, train_predicted, lookback + 1)
+    #Repeat for Actual Training Labels:
+    new_y_train = inverse_transform(scaler, y_train, lookback + 1)
+    
+    plt.plot(new_y_train, label='Actual Close')
+    plt.plot(train_predictions, label='Predicted Close')
     plt.xlabel('Day')
     plt.ylabel('Close')
     plt.legend()
-    plt.show()
+    plt.savefig(os.path.join('images', 'train_plot.png'))
+    plt.close()
+
+
+# processing the test data
+    test_predictions = model(X_test.to(device)).detach().cpu().numpy()
+    test_predictions = inverse_transform(scaler, test_predictions, lookback + 1)
+    new_y_test = inverse_transform(scaler, y_test.numpy(), lookback + 1)
+
+    plt.plot(new_y_test, label='Actual Close')
+    plt.plot(test_predictions, label='Predicted Close')
+    plt.xlabel('Day')
+    plt.ylabel('Close')
+    plt.legend()
+    plt.savefig(os.path.join('images', 'test_plot.png'))
+    plt.close()
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 
 
 #training the model.
-    def train_one_epoch():
+def train_one_epoch(epoch, model, train_loader, loss_function, optimizer):
         model.train(True) # Sets the model to training mode. 
         print(f'Epoch: {epoch + 1}')
         running_loss = 0.0
@@ -134,18 +187,19 @@ def main():
         print()
 
 #testing the model.
-    def validate_one_epoch():
-        model.train(False) # Set the model to evaluation mode
-        running_loss = 0.0
+def validate_one_epoch(model, test_loader, loss_function):
+    model.train(False) # Set the model to evaluation mode
+    running_loss = 0.0
         
-        for batch_index, batch in enumerate(test_loader):
-            x_batch, y_batch = batch[0].to(device), batch[1].to(device)
-            
-            #No Gradient Calculation,disables gradient calculation since no needto calculate gradients because you are not updating the model's parameters
-            with torch.no_grad():
-                output = model(x_batch) #foward pass
-                loss = loss_function(output, y_batch) # Computes the loss 
-                running_loss += loss.item()
+    for batch_index, batch in enumerate(test_loader):
+
+        x_batch, y_batch = batch[0].to(device), batch[1].to(device)
+                    
+        #No Gradient Calculation,disables gradient calculation since no needto calculate gradients because you are not updating the model's parameters
+        with torch.no_grad():
+            output = model(x_batch) #foward pass
+            loss = loss_function(output, y_batch) # Computes the loss 
+            running_loss += loss.item()
 
         avg_loss_across_batches = running_loss / len(test_loader)
         
@@ -153,6 +207,8 @@ def main():
         print('***************************************************')
         print()
 
+
+    
 
 
 
