@@ -1,0 +1,381 @@
+\documentclass{article}
+
+\usepackage{fullpage}
+\usepackage{amsmath,amssymb}
+\usepackage{dsfont}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{parskip}
+
+\usepackage[colorlinks,linkcolor=red!80!black]{hyperref}
+\usepackage[noabbrev,capitalize]{cleveref}
+
+% Use one or the other of these for displaying code.
+% NOTE: If you get
+%  ! Package minted Error: You must invoke LaTeX with the -shell-escape flag.
+% and don't want to use minted, just comment out the next line
+\usepackage{minted} \BeforeBeginEnvironment{minted}{\begingroup\color{black}} \AfterEndEnvironment{minted}{\endgroup} \setminted{autogobble,breaklines,breakanywhere,linenos}
+
+\usepackage{listings}
+
+
+% Commands for questions and answers
+\definecolor{question}{rgb}{0,0,1}
+\newcommand{\ask}[1]{\textcolor{question}{#1}}
+\newenvironment{asking}{\begingroup\color{question}}{\endgroup}
+
+\crefname{section}{Question}{Questions}
+\newlist{qlist}{enumerate}{1}
+\setlist[qlist,1]{leftmargin=*, label=\textbf{[\thesection.\arabic*]}, ref={[\thesection.\arabic*]}}
+\crefname{qlisti}{Question}{Questions}
+
+\definecolor{answer}{rgb}{0,.5,0}
+\newcommand{\ans}[1]{\par\textcolor{answer}{Answer: #1}}
+\newenvironment{answer}{\par\begingroup\color{answer}Answer: }{\endgroup}
+
+\newcommand{\red}[1]{\textcolor{red}{#1}}
+
+\definecolor{points}{rgb}{0.6,0.3,0}
+\newcommand{\pts}[1]{\textcolor{points}{[#1~points]}}
+
+\newcommand{\hint}[1]{\textcolor{black!60!white}{\emph{Hint: #1}}}
+\newcommand{\meta}[1]{\textcolor{black!60!white}{\emph{#1}}}
+
+\newcommand{\TODO}{\red{TODO}}
+
+% misc shortcuts
+\newcommand{\fig}[2]{\includegraphics[width=#1\textwidth]{#2}}
+\newcommand{\centerfig}[2]{\begin{center}\includegraphics[width=#1\textwidth]{#2}\end{center}}
+
+% Math
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator{\E}{\mathbb{E}}
+\newcommand{\bigO}{\mathcal{O}}
+\newcommand{\bX}{\mathbf{X}}
+\newcommand{\by}{\mathbf{y}}
+\DeclareMathOperator{\indic}{\mathds{1}}
+\newcommand\R{\mathbb{R}}
+\newcommand{\tp}{^\mathsf{T}}
+
+\newcommand{\toth}[1]{^{(#1)}}
+\newcommand{\ith}{\toth{i}}
+
+%%begin novalidate  % overleaf code check gives false positives here
+\makeatletter
+% \abs{} uses auto-sized bars; \abs*{} uses normal-sized ones
+\newcommand{\abs}{\@ifstar{\@Abs}{\@abs}}
+\newcommand{\@abs}[1]{\left\lvert #1 \right\rvert}
+\newcommand{\@Abs}[1]{\lvert #1 \rvert}
+
+\newcommand{\norm}{\@ifstar{\@Norm}{\@norm}}
+\newcommand{\@norm}[1]{\left\lVert #1 \right\rVert}
+\newcommand{\@Norm}[1]{\lVert #1 \rVert}
+
+\newcommand{\ceil}{\@ifstar{\@Ceil}{\@ceil}}
+\newcommand{\@ceil}[1]{\left\lceil #1 \right\rceil}
+\newcommand{\@Ceil}[1]{\lceil #1 \rceil}
+
+\newcommand{\floor}{\@ifstar{\@Floor}{\@floor}}
+\newcommand{\@floor}[1]{\left\lfloor #1 \right\rfloor}
+\newcommand{\@Floor}[1]{\lfloor #1 \rfloor}
+
+\newcommand{\inner}{\@ifstar{\@Inner}{\@inner}}
+\newcommand{\@inner}[2]{\left\langle #1, #2 \right\rangle}
+\newcommand{\@Inner}[2]{\langle #1, #2 \rangle}
+\makeatother
+%%end novalidate  % overleaf code check false-positives here
+
+
+\begin{document}
+
+\begin{center}
+\Large
+CPSC 440/540 Machine Learning (Jan-Apr 2023)\\
+Assignment 2 --
+due Friday March 1 at \textbf{11:59pm}
+\end{center}
+
+
+The assignment instructions are the same as for the previous assignment, but for this assignment you can work in groups of 1 or 2. Please only hand in one assignment for the group.
+
+
+\section{Bernoulli Inference \pts{25}}
+
+Consider a Bernoulli distribution with $\theta = 0.26$.
+\begin{qlist}
+
+\item \pts{2}
+    Suppose we generate ten iid samples $\{x\toth{1},x\toth{2},...,x\toth{10}\}$ according to this model.
+    \ask{What is the probability that all 10 samples are equal to 0?}
+
+\begin{answer}\TODO\end{answer}
+
+
+
+\item \pts{2}
+    Write a Python function that generates $t$ iid examples from this distribution,
+    based on numpy's \href{https://numpy.org/doc/stable/reference/random/generated/numpy.random.Generator.random.html#numpy.random.Generator.random}{\texttt{rng.random()} function} (which returns uniformly pseudo-random numbers in $[0, 1]$) as the source of randomness.
+    \ask{Hand in your code.}
+\begin{answer}\TODO\end{answer}
+
+
+\item \pts{2}
+    Consider a game where you get \$3 if a sample from this distribution is 0, and lose \$7 if the sample is 1.
+    \ask{What is the expected \$ value you get from playing this game?}
+\begin{answer}\TODO\end{answer}
+
+\item \pts{9}
+    Supposing you weren't able to do that math, one way to approximate the answer of the previous question is to take
+    \[ \frac 1 t \sum_{i=1}^t f(x\ith), \]
+    where each $x\ith$ is an iid sample, and $f$ gives the \$ value for that sample (either 2 or -5).
+
+    Implement this approximation, and use the code in \texttt{q\_bernoulli\_mc} to plot the following:
+    draw a line of the ``running mean'' of the approximation as you see more samples,
+    going from 1 to 100,000 samples.
+    Show three independent runs on the same plot, in different colours
+    (just calling \texttt{ax.plot} more than once and using its default colour cycle is fine).
+    Also use \texttt{ax.axhline} to show the analytical expected value from the previous part.
+    \ask{Hand in this plot.}
+
+\begin{answer}\TODO\end{answer}
+
+
+\item \pts{10}
+    Now, suppose that you start playing the game with \$20.
+    You'd really like to turn that into \$200 to have a night on the town,
+    but if you ever can't pay your debt (that is, your balance goes below \$0)
+    then you need to go on the lam.
+    What's the probability that you'll be able to have a fun night?
+    \ask{Answer to within 1\%}, i.e.\ if the answer were exactly 21.34\% (it's not)
+    then it's okay if your answer is anywhere between 20.34\% and 22.34\%.
+    \ask{Hand in your code and a justification that your answer is accurate enough.}
+
+    \meta{It's possible to answer this analytically or in various other ways, and you're welcome to do that if you want. But remember not to look up specific homework problems online; you should be able to design a simple Monte Carlo algorithm to do this!}
+
+\begin{answer}\TODO\end{answer}
+
+
+
+\end{qlist}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\clearpage
+\section{Learning with Weights \pts{5}}
+
+
+    We often use categorical (or Bernoulli) distributions as parts of more complicated distributions. In these cases we often to need to maximize a weighted log-likelihood of the form
+    \[
+    f(\theta) = \sum_{i=1}^n v\ith \log p(x\ith \mid \theta),
+    \]
+    where each $v\ith$ is a non-negative weight for example $i$.
+    \ask{Derive the MLE for this model when we use a categorical likelihood with $k$ categories for $p(x\ith \mid \theta)$.}
+    You can take as given that $f$ is concave (so that any stationary point is a global optimum).
+
+\begin{answer}\TODO\end{answer}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\clearpage
+\section{Naive Bayes \pts{35}}
+
+
+If you run \texttt{main.py mnist-naive-nb}, it will load training and test data for MNIST, discretized into binary values.
+It will then fit a ``naive'' naive Bayes model,
+which is a generative classifier that assumes $p(x_1, x_2,\dots,x_d,y)$ is product of Bernoullis.
+This model has a very high test error (88.6\%), since the features do not affect the predictions.
+
+\begin{qlist}
+\item \pts{3}
+    The regular naive Bayes model discussed in class writes the joint probability of a dataset $(\bX, \by)$ as
+    \begin{align*}
+       p(\bX, \by)
+    &= \prod_{i=1}^n \left[p(y\ith) \prod_{j=1}^d p(x_j\ith \mid y\ith)\right]\\
+    &= \prod_{i=1}^n \left[
+            \theta_y^{y\ith} (1-\theta_y)^{1-y\ith}
+            \prod_{j=1}^d \left[ \theta_{j \mid y\ith}^{x_j\ith} (1-\theta_{j \mid y\ith})^{1 - x_j\ith} \right]
+       \right]
+    ,\end{align*}
+    using Bernoullis to parameterize $p(y^i)$ and each conditionals $p(x_j \mid y)$.
+    \ask{Show how to derive the MLE for any particular parameter $\theta_{j \mid c}$.}
+    You can assume here that the log-likelihood is concave (so that any stationary point is a global optimum).
+\begin{answer}\TODO\end{answer}
+
+
+\item \pts{2}
+    Even though the naive Bayes likelihood has many parameters,
+    the MLE for a particular parameter $\theta_{j\mid c}$ does not depend on $\theta$ or any any $\theta_{j'\mid c'}$ with $j\neq j'$ and $c' \neq c$.
+    \ask{Explain why these terms do not appear in the MLE.}
+    (Don't use the probabilistic concept of ``independence'' in your answer. Instead explain how the form of the log-likelihood makes them not depend on each other.)
+
+\begin{answer}\TODO\end{answer}
+
+
+\item \pts{8}
+    Implement a standard naive Bayes classifier with this parameterization in \texttt{naive\_bayes.py}. 
+    Include the same Beta prior for each $X_j \mid Y$, since otherwise you'll get some NaNs
+    (but no need for a prior on $Y$, since we have lots of data there).
+    \ask{Hand in your code, and the output of \texttt{python main.py mnist-nb}, which tests with several different choices for the amount of Laplace smoothing.}
+
+\begin{answer}\TODO\end{answer}
+
+\item \pts{5}
+    Naive Naive Bayes was \emph{way} too naive;
+    Naive Bayes still doesn't do \emph{that} well.
+    What if we removed the independence assumption and just went for a full tabular parameterization in a ``Galaxy Brain Bayes'' model
+    \[ p(\bX, \by) = \prod_{i=1}^n \left[ p(y\ith) p(x\ith \mid y\ith) \right] ,\]
+    where $p(y)$ is Bernoulli and $p(x \mid y)$ is a full tabular distribution,
+    with Laplace smoothing (adding one pseudocount per possible $x$ value).
+    Without actually implementing it (unless you want to),
+    \ask{what would the test and training error of this model be on the current problem?}
+    Give your reasoning; be explicit about what the predictions will be.
+
+\begin{answer}\TODO\end{answer}
+
+\end{qlist}
+
+How much better can we expect to get?
+\texttt{python main.py mnist-logreg} will fit a multiclass logistic regression (aka softmax regression) model from scikit-learn,
+which gets about 7.6\% error, less than half the error rate of naive Bayes.
+(Various nonlinear models can get almost zero error on this problem.)
+So, let's try a different way to make naive Bayes less naive, which will substantially improve its performance.
+
+It seems reasonable that there would be clusters in the classes.
+For example, there might are several different ``general ways'' to draw the digit \texttt{7}.
+Instead of assuming that the features are independent given the class label,
+we might instead assume they're independent given the \emph{cluster} that they are in.
+Consider a \emph{vector-quantized naive Bayes} (VQNB) that implements this idea:
+\begin{itemize}
+\item
+    It clusters the examples associated with \emph{each digit} into $k$ clusters, using k-means clustering
+    ($k$ clusters for each class, $10 k$ clusters total).
+    We'll use $z \ith$ as the cluster number of example $i$.
+    The value $z \ith$ will be from $1$ to $k$,
+    with $y \ith$ determining whether we are considering the $k$ ``0'' clusters, the $k$ ``1'' clusters, or so on.
+\item
+    Since we don't know $z \ith$ (it is a ``latent variable''),
+    we can marginalize over its possible values.
+    Using the marginalization and then the product rule, we can write the joint probability as
+\begin{align*}
+    p(x_1\ith, x_2\ith,\dots,x_d\ith, y\ith)
+ &= \sum_{z=1}^k p(x_1\ith, x_2\ith, \dots, x_d\ith, y\ith, z\ith = z)
+\\&= \sum_{z=1}^k  p(x_1\ith, x_2\ith, \dots, x_d\ith \mid y\ith, z\ith = z) \; p(y\ith, z\ith = z)
+\\&= \sum_{z=1}^k  p(x_1\ith, x_2\ith, \dots, x_d\ith \mid y\ith, z\ith = z) \; p(z\ith = z \mid y\ith) \; p(y\ith)
+\\&= p(y\ith) \sum_{z=1}^k p(z \mid y\ith) \left[ \prod_{j=1}^d p(x_j\ith \mid y\ith, z) \right]
+;\end{align*}
+the last line uses independence of the features given the cluster.
+\end{itemize}
+
+\begin{qlist}[resume]
+\item \pts{12}
+    Implement the VQNB method (there's a stub in \texttt{naive\_bayes.py}).
+    \ask{Hand in your code, and the test error you obtain with this model for $k=2$ through $k=5$.}
+
+    \hint{The same KMeans class as last time is in the handout code for you to use, or feel free to use \texttt{scikit-learn}'s.}
+
+    \hint{
+        $p(y)$ you can handle just as before.
+        $p(z \mid y)$ is a categorical variable.
+        $p(x_j \mid y, z)$ is Bernoulli; you'll have one Bernoulli parameter for each $(y, z)$ pair, which it might be convenient to organize in a $10 \times k$ array.
+    }
+
+    \hint{If you're working with log-probabilities (which is a good idea), \texttt{scipy.special.logsumexp} might be helpful for the sum operation.}
+
+    \hint{To help with debugging, note that you should get the naive Bayes model in the special case of $k=1$. Further, with this type of model you usually see the biggest performance gain when going from $k=1$ to $k=2$.}
+
+    \hint{You may not be able to exactly match the performance of logistic regression.}
+
+\begin{answer}\TODO\end{answer}
+
+
+\item \pts{3}
+    For a run of the method with $k=5$,
+    \ask{show the images obtained by plotting the estimates for $p(x_j = 1 \mid z, y)$ for all $j$ as a 28 by 28 image, for each value of $z$ and $y$} (so there should be 10 images).
+    There's a code stub in there for plotting it, just fill that out.
+
+\begin{answer}\TODO\end{answer}
+
+\item \pts{2} \ask{What is the big-O computational cost of making a prediction with this model?}
+
+\begin{answer}\TODO\end{answer}
+
+
+\end{qlist}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\clearpage
+\section{Neural Networks \pts{35}} \label{q:nns}
+
+
+
+\begin{qlist}
+
+\item \pts{8}
+\texttt{main.py nn-regression} runs a stochastic gradient method to train a neural network on the \texttt{basis\_data} dataset from a previous assignment. However, in its current form it doesn't fit the data very well. Modify the training procedure and model to improve the performance of the neural network. \ask{Hand in your plot after changing the code to have better performance, and list the changes you made}.
+
+\hint{There are many possible strategies you could take to improve performance. Below are some suggestions, but note that the some will be more effective than others:
+\begin{itemize}
+\item Changing the network structure (\texttt{hidden\_layer\_sizes} gives the number of hidden units per layer).
+\item Changing the training procedure (you can change the stochastic gradient step-size, use decreasing step sizes, use mini-batches, run it for more iterations, add momentum, switch to \texttt{findMin}, use Adam, and so on).
+\item Transform the data by standardizing the features, standardizing the targets, and so on.
+\item Add regularization (L2-regularization, L1-regularization, dropout, and so on).
+\item Change the initialization.
+\item Add bias variables.
+\item Change the loss function or the non-linearities (right now it uses squared error and $\tanh$ to introduce non-linearity).
+\item Use mini-batches of data, possibly with batch normalization.
+\end{itemize}
+}
+
+\begin{answer}\TODO\end{answer}
+
+\end{qlist}
+
+
+
+
+Okay, that's enough of our hand-coded neural net. Time for some autodiff!
+
+We're going to use PyTorch; see \url{https://pytorch.org} for installation instructions (the CPU version is fine; if you're having trouble, you could also use \href{https://colab.research.google.com/}{Google Colab}). \href{https://pytorch.org/tutorials/beginner/basics/tensorqs_tutorial.html}{This tutorial page} is a decent starting place for reference.
+
+\begin{qlist}[resume]
+
+\item \pts{3}
+    For the provided code in \texttt{TorchNeuralNetClassifier(layer\_sizes=[3])}, \ask{how many parameters are there, and what do they represent?}
+
+\hint{\texttt{list(thing.parameters())} will get you the parameters of either a layer or a \texttt{torch.nn.Module}.}
+
+\begin{answer}\TODO\end{answer}
+
+\item \pts{4} Modify the network to use a more typical classification loss: maximizing the likelihood of a categorical likelihood, aka softmax loss, aka cross-entropy. \ask{Hand in the modifications to your code.}
+
+\meta{You don't need to implement it yourself from scratch -- you can use anything from PyTorch here.}
+
+\begin{answer}\TODO\end{answer}
+
+
+\item \pts{3} PyTorch doesn't have an easy built-in way to compute the loss after going through a \texttt{torch.nn.Softmax} layer. \ask{Why not? Why does it insist on log inputs? Describe an example where using log-probabilities would give meaningfully different results from ``plain'' probabilities.}
+
+\begin{answer}\TODO\end{answer}
+
+\item \pts{7} Change \texttt{TorchNeuralNetClassifier} to work well on MNIST dataset -- that is, at least match logistic regression (error rate 7.5\%), but you can probably do better. You'll probably do similar stuff to \cref{q:nns}. \ask{Describe the changes you made and your best test performance.}
+
+\begin{answer}\TODO\end{answer}
+
+\item \pts{7} Change the model in \texttt{Convnet.build} to use convolutional layers, while getting test error at least as good as the MLP got. (Feel free to make it less generic, e.g.\ not supporting arbitrary \texttt{layer\_sizes} anymore.) \ask{Submit your \texttt{build()} method, and any other relevant changes, as well as your final test error.} (We're probably overfitting a bit at this point, though\dots.)
+
+\hint{To make it a little faster by using your GPU, you can pass \texttt{device="cuda"} if you have an appropriate version of PyTorch installed, or \texttt{device="mps"} if you're a recent Mac.}
+
+\item \pts{3} If we use a layer \texttt{torch.nn.Conv2d(in\_channels=1, out\_channels=128, kernel\_size=(4, 4))}, \ask{what are the resulting parameter shapes, and why? Why don't we need to pass in the shape of the input image?}
+\begin{answer}\TODO\end{answer}
+
+\end{qlist}
+
+
+
+\end{document}

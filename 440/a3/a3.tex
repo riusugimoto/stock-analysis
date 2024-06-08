@@ -1,0 +1,475 @@
+\documentclass{article}
+
+\usepackage{fullpage}
+\usepackage{amsmath,amssymb}
+\usepackage{bm}
+\usepackage{dsfont}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{parskip}
+
+\usepackage[colorlinks,linkcolor=red!80!black]{hyperref}
+\usepackage[noabbrev,capitalize]{cleveref}
+
+% Use one or the other of these for displaying code.
+% NOTE: If you get
+%  ! Package minted Error: You must invoke LaTeX with the -shell-escape flag.
+% and don't want to use minted, just comment out the next line
+\usepackage{minted} \BeforeBeginEnvironment{minted}{\begingroup\color{black}} \AfterEndEnvironment{minted}{\endgroup} \setminted{autogobble,breaklines,breakanywhere,linenos}
+
+\usepackage{listings}
+
+
+% Commands for questions and answers
+\definecolor{question}{rgb}{0,0,1}
+\newcommand{\ask}[1]{\textcolor{question}{#1}}
+\newenvironment{asking}{\begingroup\color{question}}{\endgroup}
+
+\crefname{section}{Question}{Questions}
+\newlist{qlist}{enumerate}{1}
+\setlist[qlist,1]{leftmargin=*, label=\textbf{[\thesection.\arabic*]}, ref={[\thesection.\arabic*]}}
+\crefname{qlisti}{Question}{Questions}
+
+\definecolor{answer}{rgb}{0,.5,0}
+\newcommand{\ans}[1]{\par\textcolor{answer}{Answer: #1}}
+\newenvironment{answer}{\par\begingroup\color{answer}Answer: }{\endgroup}
+
+\newcommand{\red}[1]{\textcolor{red}{#1}}
+
+\definecolor{points}{rgb}{0.6,0.3,0}
+\newcommand{\pts}[1]{\textcolor{points}{[#1~points]}}
+\newcommand{\onept}[1]{\textcolor{points}{[1~point]}}
+
+\newcommand{\hint}[1]{\textcolor{black!60!white}{\emph{Hint: #1}}}
+\newcommand{\meta}[1]{\textcolor{black!60!white}{\emph{#1}}}
+
+\newcommand{\TODO}{\red{TODO}}
+
+% misc shortcuts
+\newcommand{\fig}[2]{\includegraphics[width=#1\textwidth]{#2}}
+\newcommand{\centerfig}[2]{\begin{center}\includegraphics[width=#1\textwidth]{#2}\end{center}}
+
+% Math
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\E}{\mathbb{E}}
+\newcommand{\bigO}{\mathcal{O}}
+\newcommand{\bmu}{\bm{\mu}}
+\newcommand{\bSigma}{\bm{\Sigma}}
+\newcommand{\bX}{\mathbf{X}}
+\newcommand{\by}{\mathbf{y}}
+\DeclareMathOperator{\indic}{\mathds{1}}
+\DeclareMathOperator{\N}{\mathcal{N}}
+\newcommand\R{\mathbb{R}}
+\newcommand{\tp}{^\mathsf{T}}
+\newcommand{\ud}{\,\mathrm{d}}
+\DeclareMathOperator*{\Var}{Var}
+
+\newcommand{\toth}[1]{^{(#1)}}
+\newcommand{\ith}{\toth{i}}
+
+\DeclareMathOperator{\Poisson}{Poisson}
+
+%%begin novalidate  % overleaf code check gives false positives here
+\makeatletter
+% \abs{} uses auto-sized bars; \abs*{} uses normal-sized ones
+\newcommand{\abs}{\@ifstar{\@Abs}{\@abs}}
+\newcommand{\@abs}[1]{\left\lvert #1 \right\rvert}
+\newcommand{\@Abs}[1]{\lvert #1 \rvert}
+
+\newcommand{\norm}{\@ifstar{\@Norm}{\@norm}}
+\newcommand{\@norm}[1]{\left\lVert #1 \right\rVert}
+\newcommand{\@Norm}[1]{\lVert #1 \rVert}
+
+\newcommand{\ceil}{\@ifstar{\@Ceil}{\@ceil}}
+\newcommand{\@ceil}[1]{\left\lceil #1 \right\rceil}
+\newcommand{\@Ceil}[1]{\lceil #1 \rceil}
+
+\newcommand{\floor}{\@ifstar{\@Floor}{\@floor}}
+\newcommand{\@floor}[1]{\left\lfloor #1 \right\rfloor}
+\newcommand{\@Floor}[1]{\lfloor #1 \rfloor}
+
+\newcommand{\inner}{\@ifstar{\@Inner}{\@inner}}
+\newcommand{\@inner}[2]{\left\langle #1, #2 \right\rangle}
+\newcommand{\@Inner}[2]{\langle #1, #2 \rangle}
+\makeatother
+%%end novalidate  % overleaf code check false-positives here
+
+
+\begin{document}
+
+\begin{center}
+\Large
+CPSC 440/550 Advanced Machine Learning (Jan-Apr 2024)\\
+Assignment 3 --
+due Tuesday April 2nd at \textbf{11:59pm}
+\end{center}
+
+
+The assignment instructions are the same as for the previous assignments. If you do the assignment with a partner, please only hand in one copy for the group (using the appropriate Gradescope feature).
+
+
+
+\section{Gamma-Poission Models \pts{25}}
+
+
+The Poisson distribution is a discrete distribution over $\{0, 1, 2, 3, \dots \}$.
+Given a ``rate'' parameter $\lambda > 0$, the distribution is given by
+\[
+y \sim \Poisson(\lambda)
+    \qquad
+p(y \mid \lambda) = \frac{1}{y!} \lambda^y e^{-\lambda}
+    \qquad
+\E[y \mid \lambda] = \lambda
+    \qquad
+\Var[y \mid \lambda] = \lambda
+.\]
+Using $\lambda^y = \exp(\log \lambda \cdot y)$,
+the Poisson can be written as a one-parameter exponential family as
+\[
+p(y \mid \lambda)
+= \frac{h(y)}{Z_1(\lambda)} \exp(\eta(\lambda) s(y))
+    \qquad
+\underbrace{\eta(\lambda) = \log \lambda}_\text{parameter function}
+    \qquad
+\underbrace{s(y) = y}_\text{suff.\ stat.}
+    \qquad
+\underbrace{h(y) = \frac{1}{y!}}_\text{support func.}
+    \qquad
+\underbrace{Z_1(\lambda) = e^\lambda}_\text{normalizer}
+.\]
+Or, in canonical form with the log-rate parameter $\eta = \log \lambda$,
+\[
+p(y \mid \eta)
+= \frac{h(y)}{Z_2(\eta)} \exp(\eta \, s(y))
+    \qquad
+\underbrace{s(y) = y}_\text{suff.\ stat.}
+    \qquad
+\underbrace{h(y) = \frac{1}{y!}}_\text{support func.}
+    \qquad
+\underbrace{Z_2(\eta) = e^{e^\eta}}_\text{normalizer}
+.\]
+
+
+The usual conjugate prior for the Poisson distribution is the Gamma,
+which can be written
+with a shape parameter $\alpha > 0$ and a rate parameter $\beta > 0$ as
+\[
+\lambda \sim \operatorname{Gamma}(\alpha, \beta)
+\qquad
+p(\lambda \mid \alpha, \beta)
+  = \frac{\beta^\alpha}{\Gamma(\alpha)} \lambda^{\alpha-1}\exp(-\beta\lambda)
+  = \frac{1}{Z_g(\alpha, \beta)} \lambda^{\alpha-1}\exp(-\beta\lambda)
+,\]
+where $\Gamma$ is \href{https://en.wikipedia.org/wiki/Gamma_function}{the gamma function}, so that e.g.\ for positive integers $n$ we have $\Gamma(n) = (n - 1)!$,
+and $Z_g(\alpha, \beta) = \Gamma(\alpha) / \beta^\alpha$.
+This is itself a two-parameter exponential family (albeit not written here in canonical form).
+
+Let's define a standard notation $\bar{y} = \frac1n \sum_{i=1}^n y\ith$;
+you may or may not find this useful in your answers.
+
+\hint{You should be able to use the form of the gamma distribution to solve all the integrals that show up in this question. Use $Z_g$ to represent the normalizing constant of the gamma distribution,\footnote{%
+    Since continuous PDFs integrate to 1, we have 
+    $\int \frac{\beta^\alpha}{\Gamma(\alpha)} \lambda^{\alpha-1} \exp(-\beta\lambda) \ud\lambda = 1$. 
+    Thus we have $\int \lambda^{\alpha-1} \exp(-\beta\lambda) \ud\lambda = \frac{\Gamma(\alpha)}{\beta^\alpha}$.
+    If we write $p(\lambda \mid \alpha, \beta) \propto \lambda^{\alpha-1} \exp(-\beta\lambda))$,
+    then the normalizing constant is $Z(\alpha,\beta) = \frac{\Gamma(\alpha)}{\beta^\alpha}$.
+} and write e.g.\ $\alpha^+$ and $\beta^+$ as the updated parameters of the gamma distribution in the posterior.}
+\begin{qlist}
+
+\item \pts{5} Calculate the posterior distribution for $\lambda$, \ask{$p(\lambda \mid \by, \alpha, \beta)$}.
+
+\begin{answer}\TODO\end{answer}
+
+\item \pts{5} Calculate the marginal likelihood of $\by$ given the hyper-parameters $\alpha$ and $\beta$,
+\[ \ask{ p(\by \mid \alpha, \beta) = \int p(\by, \lambda \mid \alpha, \beta) \ud\lambda  }. \]
+
+\begin{answer}\TODO\end{answer}
+
+\item \pts{5} Calculate the posterior mean estimate for $\lambda$,
+\[ \ask{ \E[\lambda \mid \by, \alpha, \beta] = \int \lambda \, p(\lambda \mid \by,\alpha,\beta) \ud\lambda }. \]
+
+\begin{answer}\TODO\end{answer}
+
+
+\item \pts{5} Calculate the posterior predictive distribution for a new independent observation $\tilde{y}$ given $\by$,
+\[ \ask{ p(\tilde{y} \mid \by, \alpha, \beta) = \int p(\tilde{y},\lambda\mid \by,\alpha,\beta) \ud\lambda  }. \]
+
+
+\begin{answer}\TODO\end{answer}
+
+
+\item \pts{5}
+Poisson regression is a standard method for predicting a count $y$ from an input $x$,
+based on a dataset $\bigl\{ \bigl(x\ith, y\ith\bigr) \bigr\}_{i=1}^n$.
+It parameterizes $y \mid x \sim \Poisson(\exp(w\tp x))$,
+i.e.\ setting the natural parameter $\eta$ to the output of a linear model,
+which also implies that $\log \E[y \mid x] = w\tp x$.
+Probably the most common use of this method is frequentist,
+using the MLE for $w$.
+
+Suppose the counts $y$ in our dataset are mostly relatively small, and number of data points $n$ is also small;
+thus we would like to incorporate Bayesian uncertainty into our model.
+Using the results from this question and our discussion from class of Bayesian linear/logistic regression,
+\ask{what would be a reasonable way to do that?}
+Specify a reasonable probabilistic model, and describe in general terms how to use it.
+
+\begin{answer}\TODO\end{answer}
+
+\end{qlist}
+
+
+
+
+\clearpage
+\section{Empirical Bayes for Bernoulli Models \pts{40}}
+
+If you run \texttt{main.py eb-base}, it will load a small dataset representing the number of people diagnosed with stomach cancer in a set of different regions, and the number of people at risk in the region. The format of the data is as follows:
+\begin{itemize}
+  \item \texttt{n[j,0]} is number of positive examples in the training set for group $j$.
+  \item \texttt{n[j,1]} is the total number of examples in the training set for group $j$.
+  \item \texttt{n\_test[j,0]} is number of positive examples in the testing set for group $j$.
+  \item \texttt{n\_test[j,1]} is the total number of examples in the testing set for group $j$.
+\end{itemize}
+The code first shows the negative log-likelihood (NLL) on the test set if we assume that the probability of getting stomach cancer among each group is 0.5. The NLL under this choice is very high, since the number of positives is fairly low (remember that we want to have a low NLL, corresponding to a high likelihood). The code then computes the MLE for each group, and evaluates the NLL with this choice.
+
+\begin{qlist}
+\item \pts{3}
+    \ask{Why do we get \texttt{NaN} for the NLL with the MLE values?
+         What is the actual test likelihood supposed to be in this case?}
+
+\begin{answer}\TODO\end{answer}
+
+
+\item \pts{4}
+    Laplace smoothing corresponds to MAP estimation with a beta prior that has $\alpha=2$ and $\beta=2$.
+    There's a stub in \texttt{main.py} under \texttt{eb\_map}.
+    \ask{What is the test NLL if we use Laplace smoothing to estimate the parameters?} 
+
+\begin{answer}\TODO\end{answer}
+
+\item \pts{4}
+    Instead of using MAP estimation and then computing the NLL,
+    we could use the Bayesian approach of computing the negative logarithm of the posterior predictive probability of the test data.
+    \ask{%
+      What is the total negative-log-likelihood of one-group-at-a-time posterior predictive probabilities,
+      $\sum_{j=1}^{n_\mathit{groups}} -\log p( \texttt{n\_test[j, 0]} \mid \bX, \alpha, \beta, \texttt{n\_test[j, 1]})$,
+      using a beta prior with $\alpha=2$ and $\beta=2$?
+      Explain why you think this is better/worse than the test NLL under MAP estimation.}
+
+\begin{answer}\TODO\end{answer}
+
+\item \pts{4}
+    Instead of modeling each group independently,
+    consider fitting a single Bernoulli model by pooling the data across all groups.
+    In other words, we ignore the groups and treat all the examples as if they came from a single source.
+    \ask{%
+      Report the test NLL in this pooled setting when using MLE, MAP, and the posterior predictive.
+      Why are these results more similar than when we use independent Bernoullis for each group?
+    }
+
+\begin{answer}\TODO\end{answer}
+
+\item \pts{4}
+    In the pooled data model,
+    you can compute the logarithm of the marginal likelihood of the hyper-parameters given the data as \texttt{betaln(a + n1, b + n0) - betaln(a, b)}
+    (which is the ratio of posterior and prior normalizing constants, converted to the log domain; \texttt{betaln} is from \texttt{scipy.special}).
+    Here, \texttt{n1} is the number of 1s, \texttt{n0} is the number of 0s, \texttt{a} gives the value of $\alpha$, and \texttt{b} gives the value of $\beta$.
+    \ask{Can you find the value of $\alpha$ and $\beta$ that optimize the marginal likelihood? (What are they, and what's the likelihood?)}
+
+\hint{%
+    It may be helpful to parameterize the beta distribution in terms of
+    $m=\alpha/(\alpha+\beta)$ (the proportion of 1s)
+    and $k = (\alpha+\beta)$ (the ``strength'' of our belief in this ratio).\footnote{%
+        Instead of writing the beta distribution as
+        $p(\theta \; | \; \alpha, \beta) \propto \theta^{\alpha-1}(1-\theta)^{\beta-1}$,
+        write it as $p(\theta \; | \; m, k) \propto \theta^{km-1}(1-\theta)^{k(1-m)-1}$.
+        The set of distributions you can represent is the same,
+        but the way the parameters change the distribution changes.}
+    Try setting $m$ to the MLE value of $\theta$ and varying $k$.}
+
+\begin{answer}\TODO\end{answer}
+
+
+\item \pts{6}
+    In the textbook where this data came from (Johnson and Albert, ``Ordinal Data Modeling''),
+    they suggest using an independent hyper-prior over $m$ and $k$ of the form
+    \[ p(m) \propto m^{.01-1}(1-m)^{9.9-1}, \quad p(k) \propto 1/(1+k)^2  .\]
+    The hyper-prior over $m$ is biased towards low values (since we expect the cancer to be rare) but not particularly strong,
+    while the prior over $k$ is similar to what is called a ``Jeffreys prior'' over scale variables 
+    (which would satisfy a particular definition of being an ``uninformative prior'').
+
+    In the pooled data model,
+    find the value of $\alpha$ and $\beta$ that optimize the marginal likelihood with this hyper-prior
+    (or equivalently, optimize the log of the marginal likelihood with the log of this prior as the regularizer).
+    \ask{Up to one decimal place, what are the optimal values of $\alpha$ and $\beta$ under this hyper-prior?
+         What values of $m$ and $k$ does this correspond to choosing?
+         Hand in your code for computing the objective function that is being optimized.}
+
+    \hint{For this question, you can use a ``brute force'' approach to find $\alpha$ and $\beta$, by searching over $\{0.1, 0.2, \dots, 9.9\}$ for each value.}
+
+\begin{answer}\TODO\end{answer}
+
+
+\item \label{q:eb:newprior-sep} \pts{6}
+    Now that we have a better way to estimate,
+    we can return to the original setting with a separate parameter for each group.
+    The marginal likelihood is then given by just the product of what it was for the pooled data:
+    \[
+        p(\bX \mid \alpha, \beta) \propto
+        \prod_{j=1}^k \frac{Z(\alpha+n_{1j},\beta + n_{0j})}{Z(\alpha,\beta)}
+    ,\]
+    where $n_{1j}$ is the number of 1s in group $j$,
+    $n_{0j}$ is the number of 0s in group $j$,
+    and the normalizing constant $Z$ is the beta function.
+
+    Find the values of $\alpha$ and $\beta$ that optimize the marginal likelihood times the hyper-prior from the previous question.
+    You'll need to change the limits on the brute-force search;
+    keep in mind the meanings of $\alpha$ and $\beta$ and that cancer is (thankfully) relatively rare when you're deciding on the new limits.
+    \ask{Hand in your code to compute the objective function being optimized,
+         report the values of $\alpha$ and $\beta$ that you find,
+         and report the negative logarithm of the posterior predictive probability of the test data under this choice of $\alpha$ and $\beta$.}
+    If this is too slow, you can restrict the search to positive integer values for $\alpha$ and $\beta$.
+
+\begin{answer}\TODO\end{answer}
+
+\item \pts{3}
+    In the model from the last question,
+    \ask{what is the posterior predictive probability of seeing a 1 for a new group?}
+
+\begin{answer}\TODO\end{answer}
+
+\item \pts{3}
+    Under the choice of $\alpha$ and $\beta$ from \cref{q:eb:newprior-sep},
+    \ask{what is the NLL of the test data if we use MAP estimation for the parameters?}
+
+\begin{answer}\TODO\end{answer}
+
+\item \pts{3}
+    In this question, many of the best-performing methods achieve fairly-similar performance.
+    \ask{Give an explanation for why these different model choices do not make a \emph{huge} difference for this dataset.}
+
+\begin{answer}\TODO\end{answer}
+\end{qlist}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\clearpage
+\section{Generative Classifiers with Gaussian Assumption \pts{35}}
+
+Consider the 3-class classification dataset in this image:
+\centerfig{.5}{figs/sample}
+In this dataset, we have 2 features and each colour represents one of the classes. Note that the classes are highly structured: the colours each roughly follow a Gausian distribution plus some noisy samples.
+
+Since we have an idea of what the features look like for each class, we might consider classifying  inputs $x$ using a generative classifier. In particular, we are going to use Bayes rule to write
+\[
+p(y = c \mid x, \Theta) = \frac{p(x \mid y = c, \Theta) \cdot p(y = c \mid \Theta)}{p(x \mid \Theta)},
+\]
+where $\Theta$ represents the parameters of our model. To classify a new example $\tilde{x}$, we get
+\[
+    \hat{y}
+    = \argmax_{c \in \{1,2,\dots,k\}} p(y=c \mid \tilde x, \Theta)
+    = \argmax_{c \in \{1,2,\dots,k\}} p(y=c \mid \Theta) p(\tilde{x} \mid y = c, \Theta)
+    = \argmax_{c \in \{1,2,\dots,k\}} \pi_c \N(\tilde{x} \mid \bmu_c, \bSigma_c)
+,\]
+where we've assumed that $y \mid \Theta \sim \operatorname{Categorical}(\pi_1, \dots, \pi_k)$,
+and $x \sim (y = c) \sim \N(\bmu_c, \bSigma_c)$;
+the notation $\N(x \mid \bmu, \bSigma)$ means the density of $\N(\bmu, \bSigma)$ evaluated at $x$.
+
+Recall that the maximum likelihood estimate for $\pi_c$ is simply $n_c / n$,
+where $n_c = \sum_{i=1}^n \indic(y\ith = c)$ is the number of data points in class $c$.
+Given a dataset $(\bX, \by)$,
+the MLE for the mean and covarance parameters is then
+\begin{align*}
+    \argmax_{\bmu_1,\dots,\bmu_k,\bSigma_1,\dots,\bSigma_k}
+    \prod_{i=1}^n & \pi_{y\ith} \N(x\ith \mid \bmu_{y\ith}, \bSigma_{y\ith})
+\\&= \argmin
+    \sum_{i=1}^n \left(
+        \log \abs{\bSigma_{y\ith}}
+      + \left(x\ith - \bmu_{y\ith}\right)\tp \bSigma_{y\ith}^{-1} \left(x\ith - \bmu_{y\ith}\right)
+      \right)
+\\&= \argmin
+    \sum_{c=1}^k
+    \sum_{i : y\ith = c} \left(
+        \log \abs{\bSigma_{c}}
+      + \left(x\ith - \bmu_{c}\right)\tp \bSigma_{c}^{-1} \left(x\ith - \bmu_{c}\right)
+      \right)
+.\end{align*}
+
+In class, we discussed the general GDA/QDA model,
+which allows any value for the $\bmu_c$ and $\bSigma_c$.
+The objective above then separates for the different $c$,
+and the MLE becomes just the per-class MLE.
+
+We also discussed \emph{linear discriminant analysis} (LDA),
+which enforces that all the covariance matrices agree, $\bSigma_c = \bSigma$.
+In this case the classifier becomes linear,
+with $\bSigma$ corresponding to a ``pooled covariance.''
+
+Another common restriction on the $\bSigma_c$ is that they are diagonal matrices,
+since this only requires $\bigO(d)$ parameters instead of $\bigO(d^2)$;
+this corresponds to assuming that the features are independent univariate Gaussians given the class label.
+
+\begin{qlist}
+\item \pts{10}
+    \ask{Derive the MLE for the GDA model under the assumption of \emph{common diagonal covariance} matrices},
+    $\bSigma_c = \operatorname{diag}(\sigma_1^2, \dots, \sigma_d^2)$.
+    Note that this means there are $d$ total parameters for the model's covariances
+    (plus $k d$ parameters in each class's separate mean, $\bmu_c$).
+
+\hint{%
+    You might be able to significantly simply notation if you write something like $\sum_{i : y\ith = c}$,
+    or define some shortcut notation like $\sum_{i \in y_c}$ to mean the same thing;
+    just make sure it's clear.
+    You also might want to use $n_c = \sum_{i \in y_c} 1$ to be the number of cases where $y\ith = c$.
+}
+
+\hint{%
+    The determinant of a diagonal matrix is the product of its diagonal entries.
+    The inverse is the diagonal matrix where each diagonal entry is inverted.
+}
+
+\begin{answer}\TODO\end{answer}
+
+\item \pts{10}
+    \ask{Derive the MLE for the GDA model under the assumption of \emph{individual scaled-identity} matrices},
+    $\bSigma_c = \sigma_c^2 \mathbf I$;
+    here there are $k$ total covariance parameters, one per class.
+
+\begin{answer}\TODO\end{answer}
+
+\item \pts{10}
+    When you run \texttt{main.py gda} it loads a variant of the dataset in the figure that has 12 features and 10 classes.
+    This data has been split up into a training and test set, and the code fits a $k$-nearest neighbour classifier to the training set then reports the accuracy on the test data (around $\sim 63\%$ test error).
+    The $k$-nearest neighbour model does poorly here since it doesn't take into account the Gaussian-like structure in feature space for each class label.
+
+    Fill in the class \texttt{GDA} to fit a GDA model to this dataset, using the MLE with individual \emph{full} covariance matrices. 
+    \ask{Hand in your code, and report the test set accuracy}.
+
+    \hint{You can use the result from class about the MLE for this model. You can also feel free to use \texttt{scipy.stats.multivariate\_normal}, or code the relevant bits yourself, as you prefer.}
+
+    \hint{You probably want to handle everything ``in log space'' for your computation.}
+
+\begin{answer}\TODO\end{answer}
+
+\item \pts{5}
+    The data here has some outliers.
+    Let's try to replace the Gaussian distribution of the previous solution with a more robust multivariate $t$ distribution.
+    Unfortunately, this distribution doesn't have a closed-form MLE,
+    but \texttt{student\_t.MultivariateT} implements numerical optimization using PyTorch.
+    Fill in the class \texttt{generative\_classifiers.TDA},
+    called by \texttt{main.py tda},
+    to fit a generative model based on the multivariate $t$ distribution.
+    \ask{Report your test accuracy and hand in your code.}
+
+    \hint{These take a little longer to fit; you might want to print some kind of status update as you go to make sure it's happening. The \texttt{tqdm} package is a nice, easy version: \texttt{from tqdm import tqdm; for c in tqdm(range(k)): ...}}
+
+\begin{answer}\TODO\end{answer}
+\end{qlist}
+
+\end{document}
+

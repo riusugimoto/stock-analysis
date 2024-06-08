@@ -37,3 +37,70 @@ Number of Epochs: 10
  we training the entrie data point (120 points) 10 epoch times 
  and each epoch iteration we iterate the number of batchs  so we iterate 12 tiems each epoch (120/10). 
  so in total we iterate 12 times 10 120 times
+
+
+
+
+
+
+Detaching Tensors from the Computation Graph
+output = model(X_test.to(device)).detach()
+
+Computation Graph
+In PyTorch, a computation graph is created dynamically when operations involving tensors are executed.
+This graph keeps track of the operations and gradients, which are necessary for backpropagation during training.
+Detach Method
+The .detach() method creates a tensor that shares the same data but is not part of the computation graph.
+It’s useful during inference (testing) when you don’t need gradients. Detaching prevents the computation of unnecessary gradients, 
+saving memory and computation.
+
+
+
+Usage of Tensors vs. NumPy Arrays
+
+When to Use Tensors when involving gradients and GPU acceleration.
+1Model Training:
+Tensors are used because they support automatic differentiation, which is essential for backpropagation.
+They are optimized for GPU acceleration.
+
+2Model Inference:
+Tensors are still used to leverage GPU acceleration.
+Even though gradients are not needed, the model expects tensor inputs.
+
+3Operations with Gradients:
+Any operation where you need to calculate gradients for optimization.
+
+
+
+When to Use NumPy Arrays  .numpy() method should be called on a tensor that is already on the CPU.
+1Data Preprocessing:
+When working with libraries like pandas or scikit-learn.
+For general data manipulation where GPU acceleration is not needed.
+
+2Post-Processing:
+After obtaining model outputs and gradients are no longer required.
+For tasks such as visualization (e.g., plotting with matplotlib), metrics computation, and other non-GPU tasks
+ex)
+test_predictions = model(X_test.to(device)).detach().cpu().numpy().flatten()
+
+
+
+
+
+CPU vs. GPU
+When to Use CPU
+1. Small Datasets:
+When the data is small enough that the overhead of transferring data to the GPU outweighs the benefits.
+2. Data Loading and Preprocessing:
+CPU is often used for loading and preprocessing data before sending it to the GPU for training/inference.
+3. Non-Parallelizable Tasks:
+Tasks that cannot be easily parallelized benefit less from GPU acceleration.
+
+
+When to Use GPU .to(device).
+1. Large Datasets and Models:
+GPUs excel at parallel processing and can handle large amounts of data more efficiently.
+2. Deep Learning Training:
+Training deep learning models involves a large number of parallelizable operations, making GPUs significantly faster.
+3. Batch Processing:
+When working with large batches of data, the parallel processing power of GPUs can lead to faster computation.
